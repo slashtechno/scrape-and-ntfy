@@ -3,5 +3,8 @@ interval = 60
 url = "https://example.com"
 css_selector = "h1"
 notifiers = [
-  {type = "webhook", config = {url = "webhook.example.com"}},
+  {type = "webhook", config = {
+  url = "https://example.com/webhook",
+  notify_on = ["change", "first_scrape", "no_change", "error"]
+  }}
 ]

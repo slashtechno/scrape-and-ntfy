@@ -1,8 +1,9 @@
 from scrape_and_ntfy.utils.logging import logger
 from scrape_and_ntfy.utils.cli_args import args
-from scrape_and_ntfy.scraping import scraper, UrlScraper, Webhook
+from scrape_and_ntfy.scraping import scraper, UrlScraper, Webhook, Notifier
 import selenium
 import toml
+
 
 def main():
     logger.debug(f"Args: {args}")
@@ -24,9 +25,22 @@ def main():
     for s in config["scrapers"]:
         notifiers = []
         for n in s["notifiers"]:
+            # Check if the notify_on values are valid (check against Notifier.NotifyOn)
+            notify_on_list = []
+            for notify_on in n["config"]["notify_on"]:
+                if notify_on not in [no.value for no in list(Notifier.NotifyOn)]:
+                    raise ValueError(f"Invalid notify_on value: {notify_on}")
+                else:
+                    # Get the Enum object from the string value
+                    notify_on_list.append(Notifier.NotifyOn(notify_on))
             if n["type"] == "webhook":
-                notifiers.append(Webhook(url=n["config"]["url"]))
-        UrlScraper(url=s["url"], css_selector=s["css_selector"], interval=s["interval"], notifiers=notifiers)
+                notifiers.append(Webhook(url=n["config"]["url"], notify_on=notify_on_list))
+        UrlScraper(
+            url=s["url"],
+            css_selector=s["css_selector"],
+            interval=s["interval"],
+            notifiers=notifiers,
+        )
     UrlScraper.clean_db()
     try:
         while True:
@@ -35,6 +49,7 @@ def main():
         logger.info("Keyboard interrupt detected; exiting")
         scraper.driver.quit()
         exit(0)
+
 
 if __name__ == "__main__":
     main()
