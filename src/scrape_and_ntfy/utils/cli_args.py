@@ -26,7 +26,7 @@ def set_argparse() -> None:
     argparser.add_argument(
         "--db-url",
         help="The URL to the database",
-        default=os.getenv("DB_URL") if os.getenv("DB_URL") else "sqlite:///db.db",
+        default=os.getenv("DB_URL") if os.getenv("DB_URL") else "sqlite:///database/db.db",
     )
     argparser.add_argument(
         "--browser",
@@ -54,6 +54,7 @@ def check_required_args(required_args: list[str], argparser: argparse.ArgumentPa
             # raise ValueError(f"{arg} is required")
             logger.critical(f"{arg} is required")
             sys.exit(1)
+
 
 
 set_argparse()
