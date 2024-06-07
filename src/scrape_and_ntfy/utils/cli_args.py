@@ -20,21 +20,23 @@ def set_argparse() -> None:
         logger.info("Loaded .env file")
     else:
         logger.warning(".env file not found")
-    argparser = argparse.ArgumentParser(description="Scrape a website and notify regarding specific changes")
+    argparser = argparse.ArgumentParser(
+        description="Scrape a website and notify regarding specific changes"
+    )
     argparser.add_argument(
         "--db-url",
         help="The URL to the database",
         default=os.getenv("DB_URL") if os.getenv("DB_URL") else "sqlite:///db.db",
     )
     argparser.add_argument(
-        "--webdriver-path",
-        help="The path to the webdriver",
-        default=os.getenv("WEBDRIVER_PATH") if os.getenv("WEBDRIVER_PATH") else None,
+        "--browser",
+        help="The browser to use",
+        default=os.getenv("BROWSER") if os.getenv("BROWSER") else "chrome",
+        choices=["chrome", "firefox", "edge", "safari"],
     )
     debug = argparser.add_argument_group("Debugging options")
     debug.add_argument(
         "--log-level",
-        default="DEBUG",
         help="The log level to use.",
         default=os.getenv("LOG_LEVEL") if os.getenv("LOG_LEVEL") else "INFO",
     )
