@@ -39,6 +39,12 @@ def set_argparse() -> None:
         help="The path to the TOML file",
         default=os.getenv("PATH_TO_TOML") if os.getenv("PATH_TO_TOML") else "config.toml",
     )
+    argparser.add_argument(
+        "--docker-headless",
+        help="Use Firefox headlessly in Docker",
+        action="store_true",
+        default=os.getenv("HEADLESS", "False").lower() == "true",
+    )
     debug = argparser.add_argument_group("Debugging options")
     debug.add_argument(
         "--log-level",

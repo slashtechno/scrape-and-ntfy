@@ -3,25 +3,39 @@ from scrape_and_ntfy.utils.cli_args import args
 from scrape_and_ntfy.scraping import scraper, UrlScraper
 from scrape_and_ntfy.scraping import notifier
 import selenium
+import sys
 import toml
 
 
 def main():
     logger.debug(f"Args: {args}")
-    config = toml.load(args.path_to_toml)
-    match args.browser:
-        case "chrome":
-            logger.info("Using Chrome")
-            scraper.driver = selenium.webdriver.Chrome()
-        case "firefox":
-            logger.info("Using Firefox")
-            scraper.driver = selenium.webdriver.Firefox()
-        case "edge":
-            logger.info("Using Edge")
-            scraper.driver = selenium.webdriver.Edge()
-        case "safari":
-            logger.info("Using Safari")
-            scraper.driver = selenium.webdriver.Safari()
+    try: 
+        config = toml.load(args.path_to_toml)
+    except FileNotFoundError:
+        logger.critical(f"File {args.path_to_toml} not found")
+        sys.exit(1)
+    if args.docker_headless:
+        # If docker_headless is True, use Firefox headlessly
+        logger.info("Using Firefox headless")
+        options = selenium.webdriver.FirefoxOptions()
+        options.add_argument("--headless")
+        # Set binary_location to /usr/bin/firefox-esr
+        options.binary_location = "/usr/bin/firefox-esr"
+        scraper.driver = selenium.webdriver.Firefox(options=options)
+    elif args.browser == "chrome":
+        logger.info("Using Chrome")
+        scraper.driver = selenium.webdriver.Chrome()
+    elif args.browser == "firefox":
+        logger.info("Using Firefox")
+        scraper.driver = selenium.webdriver.Firefox()
+    elif args.browser == "edge":
+        logger.info("Using Edge")
+        scraper.driver = selenium.webdriver.Edge()
+    elif args.browser == "safari":
+        logger.info("Using Safari")
+        scraper.driver = selenium.webdriver.Safari()
+    else:
+        raise ValueError("Invalid browser")
 
     for s in config["scrapers"]:
         notifiers = []

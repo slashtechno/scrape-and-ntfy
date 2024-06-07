@@ -16,6 +16,7 @@ css_selector = "body > div > p:nth-child(2)"
 notifiers = [
   {type = "ntfy", config = {
     url="https://ntfy.sh/example-scraper",
+    # For information on the parameters, see https://docs.ntfy.sh/publish/
     notify_on = ["change", "first_scrape", "error", "no_change"],
     on_click = "https://example.com",
     priority = 3,

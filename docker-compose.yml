@@ -1,9 +1,17 @@
 services:
-  sqlite-web:
-    image: coleifer/sqlite-web
-    ports:
-      - "8080:8080"
+  scrape-and-ntfy:
+    build:
+      context: .
+      dockerfile: Dockerfile
     volumes:
-      - ./database:/data
-    environment:
-      - SQLITE_DATABASE=db.db
+      - ./database:/app/database
+      - ./config.toml:/app/config.toml:ro
+  # sqlite-web is great for viewing the database
+  # sqlite-web:
+  #   image: coleifer/sqlite-web
+  #   ports:
+  #     - "5050:8080"
+  #   volumes:
+  #     - ./database:/data
+  #   environment:
+  #     - SQLITE_DATABASE=db.db
