@@ -1,8 +1,7 @@
 from scrape_and_ntfy.utils.logging import logger
 from scrape_and_ntfy.utils.cli_args import args
-from scrape_and_ntfy.scraping import scraper, UrlScraper, Webhook
+from scrape_and_ntfy.scraping import scraper, UrlScraper, Webhook, Notifier
 import selenium
-import dataset
 
 
 def main():
@@ -32,6 +31,7 @@ def main():
         notifiers=[webhook],
     )
     UrlScraper.clean_db()
+    Notifier.clean_db()
     try:
         while True:
             UrlScraper.scrape_all_urls()
