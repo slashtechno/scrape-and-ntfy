@@ -42,7 +42,8 @@ def set_argparse() -> None:
         "--headless-path",
         help="The path to whatever browser binary to use headlessly. Ensure this matches --browser/$BROWSER. This does not work with Safari nor Edge.",
         default=os.getenv("HEADLESS_PATH") if os.getenv("HEADLESS_PATH") else "",
-        type=validate_path_to_file,
+        # Not using validate_path_to_file because having "" as the default raises an error
+        type=str,
     )
     debug = argparser.add_argument_group("Debugging options")
     debug.add_argument(
@@ -53,14 +54,14 @@ def set_argparse() -> None:
     )
     args = argparser.parse_args()
 
-def validate_path_to_file(path: str) -> str:
-    """
-    Validate that the path to the file exists
-    """
-    if Path(path).is_file():
-        return path
-    else:
-        raise argparse.ArgumentTypeError(f"File {path} is not a file (or does not exist)")
+# def validate_path_to_file(path: str) -> str:
+#     """
+#     Validate that the path to the file exists
+#     """
+#     if Path(path).is_file():
+#         return path
+#     else:
+#         raise argparse.ArgumentTypeError(f"File {path} is not a file (or does not exist)")
 
 
 def check_required_args(required_args: list[str], argparser: argparse.ArgumentParser):

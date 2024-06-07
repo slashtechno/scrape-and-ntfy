@@ -1,7 +1,7 @@
 [project]
 name = "scrape-and-ntfy"
 version = "0.1.0"
-description = "Notify when an HTML element on a page changes"
+description = "An extremely customizable web scraper with a modular notification system and persistent storage via SQLite.  "
 authors = [
     {name = "slashtechno", email = "77907286+slashtechno@users.noreply.github.com"},
     {name = "mikeymoo5", email = "53538532+Mikeymoo5@users.noreply.github.com"}
