@@ -14,5 +14,5 @@ WORKDIR /app
 # install dependencies
 RUN pdm install --prod
 # set entrypoint to pdm run -- scrape-and-ntfy
-ENTRYPOINT ["pdm", "run", "--", "scrape-and-ntfy", "--docker-headless"]
+ENTRYPOINT ["pdm", "run", "--", "scrape-and-ntfy", "--headless-path", "/usr/bin/firefox-esr", "--browser", "firefox"]
 # ENTRYPOINT ["which", "firefox-esr"]

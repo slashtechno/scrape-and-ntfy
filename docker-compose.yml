@@ -1,3 +1,7 @@
+# Run everything with `docker compose up`
+# Run scrape-and-ntfy with `docker compose up scrape-and-ntfy`
+# Run sqlite-web with `docker compose up sqlite-web`
+# To run in the background, add `-d` to the command
 services:
   scrape-and-ntfy:
     build:
@@ -6,12 +10,13 @@ services:
     volumes:
       - ./database:/app/database
       - ./config.toml:/app/config.toml:ro
-  # sqlite-web is great for viewing the database
-  # sqlite-web:
-  #   image: coleifer/sqlite-web
-  #   ports:
-  #     - "5050:8080"
-  #   volumes:
-  #     - ./database:/data
-  #   environment:
-  #     - SQLITE_DATABASE=db.db
+  # sqlite-web is great for viewing the database  
+  # It may not work if the database is busy, however
+  sqlite-web:
+    build: https://raw.githubusercontent.com/coleifer/sqlite-web/master/docker/Dockerfile
+    ports:
+      - "5050:8080"
+    volumes:
+      - ./database:/data
+    environment:
+      - SQLITE_DATABASE=db.db

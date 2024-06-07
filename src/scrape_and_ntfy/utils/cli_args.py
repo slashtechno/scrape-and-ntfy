@@ -3,7 +3,6 @@ import os
 import sys
 from pathlib import Path
 
-# Can't do from pystodon.utils import logger since that would cause a circular import
 from scrape_and_ntfy.utils.logging import logger
 
 import dotenv
@@ -30,7 +29,7 @@ def set_argparse() -> None:
     )
     argparser.add_argument(
         "--browser",
-        help="The browser to use",
+        help="The browser to use. Generally, if the browser is based on Chromium, use Chrome and if it's based on Firefox, use Firefox.",
         default=os.getenv("BROWSER") if os.getenv("BROWSER") else "chrome",
         choices=["chrome", "firefox", "edge", "safari"],
     )
@@ -40,10 +39,10 @@ def set_argparse() -> None:
         default=os.getenv("PATH_TO_TOML") if os.getenv("PATH_TO_TOML") else "config.toml",
     )
     argparser.add_argument(
-        "--docker-headless",
-        help="Use Firefox headlessly in Docker",
-        action="store_true",
-        default=os.getenv("HEADLESS", "False").lower() == "true",
+        "--headless-path",
+        help="The path to whatever browser binary to use headlessly. Ensure this matches --browser/$BROWSER. This does not work with Safari nor Edge.",
+        default=os.getenv("HEADLESS_PATH") if os.getenv("HEADLESS_PATH") else "",
+        type=validate_path_to_file,
     )
     debug = argparser.add_argument_group("Debugging options")
     debug.add_argument(
