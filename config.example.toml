@@ -1,0 +1,7 @@
+[[scrapers]]
+interval = 60
+url = "https://example.com"
+css_selector = "h1"
+notifiers = [
+  {type = "webhook", config = {url = "webhook.example.com"}},
+]

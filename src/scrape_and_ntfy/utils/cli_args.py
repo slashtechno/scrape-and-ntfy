@@ -35,9 +35,9 @@ def set_argparse() -> None:
         choices=["chrome", "firefox", "edge", "safari"],
     )
     argparser.add_argument(
-        "--webhook-url",
-        help="The URL to the webhook",
-        default=os.getenv("WEBHOOK_URL") if os.getenv("WEBHOOK_URL") else None,
+        "--path-to-toml",
+        help="The path to the TOML file",
+        default=os.getenv("PATH_TO_TOML") if os.getenv("PATH_TO_TOML") else "config.toml",
     )
     debug = argparser.add_argument_group("Debugging options")
     debug.add_argument(
@@ -47,6 +47,15 @@ def set_argparse() -> None:
         choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
     )
     args = argparser.parse_args()
+
+def validate_path_to_file(path: str) -> str:
+    """
+    Validate that the path to the file exists
+    """
+    if Path(path).is_file():
+        return path
+    else:
+        raise argparse.ArgumentTypeError(f"File {path} is not a file (or does not exist)")
 
 
 def check_required_args(required_args: list[str], argparser: argparse.ArgumentParser):

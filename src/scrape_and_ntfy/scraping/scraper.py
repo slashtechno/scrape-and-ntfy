@@ -1,10 +1,9 @@
 from typing import OrderedDict, List
-import dataset
 from selenium import webdriver
 from datetime import datetime
 from scrape_and_ntfy.utils.logging import logger
 from scrape_and_ntfy.utils.db import db
-from scrape_and_ntfy.scraping.notifier import Notifier, Webhook
+from scrape_and_ntfy.scraping.notifier import Notifier
 
 driver: webdriver.Chrome = None
 
@@ -13,23 +12,21 @@ driver: webdriver.Chrome = None
 class UrlScraper:
     scrapers = []
 
-    def __init__(self, url: str, css_selector: str, interval: int, notifiers: List[Notifier] = None):
-        if not notifiers:
-            notifiers = []
+    def __init__(self, url: str, css_selector: str, interval: int, notifiers: List[Notifier] = []):
+        self.notifiers = notifiers
         self.url = url
         self.css_selector = css_selector
         self.interval = interval
         self._last_scrape = None
         # By default, an auto-incrementing primary key (id) is created
         table = db["scrapers"]
-        # TODO: This could probably be simplified by just using insert as clean_db should remove anything the user didn't instantiate. However, this would assume that the user didn't add any duplicates. I don't think that's too much of a concern, but it's something to consider.
         id = table.insert_ignore(
             row={
                 "url": self.url,
                 "css_selector": self.css_selector,
                 "interval": self.interval,
                 "last_scrape": self._last_scrape,
-                "notifiers": [notifier.id for notifier in notifiers],
+                # "notifiers": [notifier.id for notifier in notifiers],
             },
             keys=["url", "css_selector", "interval"],
             # `ensure`, by default, is set to True so setting it to True is redundant
@@ -49,17 +46,36 @@ class UrlScraper:
             logger.info(f"Found existing scraper for {self.url} with ID {id}")
         else:
             logger.info(f"Created scraper for {self.url} with ID {id}")
-        self.scrapers.append(id)
-
+        self.scrapers.append(
+            {
+                "id": id,
+                "url": self.url,
+                "css_selector": self.css_selector,
+                "interval": self.interval,
+                "last_scrape": self._last_scrape,
+                "notifiers": self.notifiers,
+            }
+        )
+        self._id = id
+    @property
+    def id(self):
+        """read-only id property"""
+        return self._id
     @classmethod
     def clean_db(cls):
         """
         Remove all scrapers from the database that aren't in the list of scrapers
         """
         for scraper in db["scrapers"]:
-            if scraper["id"] not in cls.scrapers:
+            if scraper["id"] not in cls.scraper_ids():
                 db["scrapers"].delete(id=scraper["id"])
                 logger.info(f"Deleted scraper for {scraper['url']} with ID {scraper['id']}")
+    @classmethod
+    def scraper_ids(cls):
+        """
+        Get the IDs of the scrapers
+        """
+        return [scraper["id"] for scraper in cls.scrapers]
     @staticmethod
     # As of Python 3.7 dicts are ordered by default
     # But technically it seems that dataset uses OrderedDicts (probably for backwards compatibility)
@@ -79,33 +95,40 @@ class UrlScraper:
         """
         Scrape all URLs that have their interval met/exceeded (or have never been scraped and have a null last scrape)
         """
+        # Not doing `for scraper in cls.scrapers` because we want to update the database and compare the data and last scrape time
         for scraper in db["scrapers"]:
-            if scraper["last_scrape"] is None or (
-                scraper["last_scrape"] + scraper["interval"]
-                <= datetime.now().timestamp()
-            ):
-                data = UrlScraper.scrape_url(scraper)
-                # Add the data to the scraper in the DB
-                scraper["last_scrape"] = datetime.now().timestamp()
-                # If the new data is different from the old data, log it
-                # TODO: Make it so the conditions for notifying are configurable
-                if scraper["data"] != data:
-                    if scraper["data"] is None:
-                        logger.info(f"First scrape for {scraper['url']} with data {data}")
-                        cls.send_to_all_notifiers(f"First scrape for {scraper['url']} with data {data}")
+            if scraper["id"] in cls.scraper_ids():
+                if scraper["last_scrape"] is None or (
+                    scraper["last_scrape"] + scraper["interval"]
+                    <= datetime.now().timestamp()
+                ):
+                    data = UrlScraper.scrape_url(scraper)
+                    # Add the data to the scraper in the DB
+                    scraper["last_scrape"] = datetime.now().timestamp()
+                    # If the new data is different from the old data, log it
+                    # TODO: Make it so the conditions for notifying are configurable
+                    if scraper["data"] != data:
+                        if scraper["data"] is None:
+                            logger.info(f"First scrape for {scraper['url']} with data {data}")
+                            cls.send_to_all_notifiers(scraper, f"First scrape for {scraper['url']} with data {data}")
+                        else:
+                            logger.info(f"Data changed for {scraper['url']} from {scraper['data']} to {data}")
+                            cls.send_to_all_notifiers(scraper, f"Data changed for {scraper['url']} from {scraper['data']} to {data}")
                     else:
-                        logger.info(f"Data changed for {scraper['url']} from {scraper['data']} to {data}")
-                        cls.send_to_all_notifiers(f"Data changed for {scraper['url']} from {scraper['data']} to {data}")
-                else:
-                    logger.debug(f"Data unchanged for {scraper['url']} with data {data}")
-                    cls.send_to_all_notifiers(f"Data unchanged for {scraper['url']} with data {data}")
-                scraper["data"] = data
-                db["scrapers"].update(scraper, ["id"])
-    @staticmethod
-    def send_to_all_notifiers(message: str):
+                        logger.debug(f"Data unchanged for {scraper['url']} with data {data}")
+                        cls.send_to_all_notifiers(scraper, f"Data unchanged for {scraper['url']} with data {data}")
+                    scraper["data"] = data
+                    db["scrapers"].update(scraper, ["id"])
+            else:
+                logger.debug(f"Scraper with ID {scraper['id']} not in list of scrapers but in database; skipping")
+    @classmethod
+    def send_to_all_notifiers(cls, scraper, message: str):
         """
         Send the message to all notifiers
         """
-        for notifier in db["notifiers"]:
-            if notifier["type"] == "webhook":
-                Webhook.notify(notifier["url"], message)
+        # Find the scraper from the database in the list of scrapers since the notifiers are stored in-memory
+        for s in cls.scrapers:
+            if s["id"] == scraper["id"]:
+                scraper = s
+                for notifier in scraper["notifiers"]:
+                    notifier.notify(message)
