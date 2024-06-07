@@ -1,15 +1,12 @@
 from scrape_and_ntfy.utils.logging import logger
 from scrape_and_ntfy.utils.cli_args import args
-from scrape_and_ntfy.scraping import scraper, UrlScraper
+from scrape_and_ntfy.scraping import scraper, UrlScraper, Webhook
 import selenium
 import dataset
 
 
 def main():
     logger.debug(f"Args: {args}")
-    logger.info("Connecting to DB")
-    scraper.db = dataset.connect(args.db_url)
-    logger.info("Connected to DB")
     match args.browser:
         case "chrome":
             logger.info("Using Chrome")
@@ -23,14 +20,25 @@ def main():
         case "safari":
             logger.info("Using Safari")
             scraper.driver = selenium.webdriver.Safari()
+    if args.webhook_url:
+        webhook = Webhook(url=args.webhook_url)
+        logger.info(f"Using webhook {webhook.url}")
+    else:
+        webhook = None
     UrlScraper(
         url="https://www.example.com",
         css_selector="h1",
         interval=5,
+        notifiers=[webhook],
     )
     UrlScraper.clean_db()
-    while True:
-        UrlScraper.scrape_all_urls()
+    try:
+        while True:
+            UrlScraper.scrape_all_urls()
+    except KeyboardInterrupt:
+        logger.info("Keyboard interrupt detected; exiting")
+        scraper.driver.quit()
+        exit(0)
 
 if __name__ == "__main__":
     main()

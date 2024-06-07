@@ -34,6 +34,11 @@ def set_argparse() -> None:
         default=os.getenv("BROWSER") if os.getenv("BROWSER") else "chrome",
         choices=["chrome", "firefox", "edge", "safari"],
     )
+    argparser.add_argument(
+        "--webhook-url",
+        help="The URL to the webhook",
+        default=os.getenv("WEBHOOK_URL") if os.getenv("WEBHOOK_URL") else None,
+    )
     debug = argparser.add_argument_group("Debugging options")
     debug.add_argument(
         "--log-level",

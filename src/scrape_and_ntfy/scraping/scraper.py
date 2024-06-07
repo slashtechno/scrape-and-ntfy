@@ -1,19 +1,21 @@
-from typing import OrderedDict
+from typing import OrderedDict, List
 import dataset
 from selenium import webdriver
 from datetime import datetime
 from scrape_and_ntfy.utils.logging import logger
+from scrape_and_ntfy.utils.db import db
+from scrape_and_ntfy.scraping.notifier import Notifier, Webhook
 
-db: dataset.Database
 driver: webdriver.Chrome = None
 
 # https://docs.sqlalchemy.org/en/20/core/type_basics.html
 
 class UrlScraper:
-    global db
     scrapers = []
 
-    def __init__(self, url: str, css_selector: str, interval: int):
+    def __init__(self, url: str, css_selector: str, interval: int, notifiers: List[Notifier] = None):
+        if not notifiers:
+            notifiers = []
         self.url = url
         self.css_selector = css_selector
         self.interval = interval
@@ -27,6 +29,7 @@ class UrlScraper:
                 "css_selector": self.css_selector,
                 "interval": self.interval,
                 "last_scrape": self._last_scrape,
+                "notifiers": [notifier.id for notifier in notifiers],
             },
             keys=["url", "css_selector", "interval"],
             # `ensure`, by default, is set to True so setting it to True is redundant
@@ -37,6 +40,7 @@ class UrlScraper:
                 "css_selector": db.types.text,
                 "interval": db.types.integer,
                 "last_scrape": db.types.float,
+                # "notifiers": db.types.list,
             },
         )
         # TODO: Check if the ID was added. If it wasn't, get the ID from the existing row
@@ -47,13 +51,13 @@ class UrlScraper:
             logger.info(f"Created scraper for {self.url} with ID {id}")
         self.scrapers.append(id)
 
-    @staticmethod
-    def clean_db():
+    @classmethod
+    def clean_db(cls):
         """
         Remove all scrapers from the database that aren't in the list of scrapers
         """
         for scraper in db["scrapers"]:
-            if scraper["id"] not in UrlScraper.scrapers:
+            if scraper["id"] not in cls.scrapers:
                 db["scrapers"].delete(id=scraper["id"])
                 logger.info(f"Deleted scraper for {scraper['url']} with ID {scraper['id']}")
     @staticmethod
@@ -70,8 +74,8 @@ class UrlScraper:
         # https://selenium-python.readthedocs.io/api.html#module-selenium.webdriver.remote.webelement
         return element.text
 
-    @staticmethod
-    def scrape_all_urls():
+    @classmethod
+    def scrape_all_urls(cls):
         """
         Scrape all URLs that have their interval met/exceeded (or have never been scraped and have a null last scrape)
         """
@@ -84,12 +88,24 @@ class UrlScraper:
                 # Add the data to the scraper in the DB
                 scraper["last_scrape"] = datetime.now().timestamp()
                 # If the new data is different from the old data, log it
+                # TODO: Make it so the conditions for notifying are configurable
                 if scraper["data"] != data:
                     if scraper["data"] is None:
                         logger.info(f"First scrape for {scraper['url']} with data {data}")
+                        cls.send_to_all_notifiers(f"First scrape for {scraper['url']} with data {data}")
                     else:
                         logger.info(f"Data changed for {scraper['url']} from {scraper['data']} to {data}")
+                        cls.send_to_all_notifiers(f"Data changed for {scraper['url']} from {scraper['data']} to {data}")
                 else:
                     logger.debug(f"Data unchanged for {scraper['url']} with data {data}")
+                    cls.send_to_all_notifiers(f"Data unchanged for {scraper['url']} with data {data}")
                 scraper["data"] = data
                 db["scrapers"].update(scraper, ["id"])
+    @staticmethod
+    def send_to_all_notifiers(message: str):
+        """
+        Send the message to all notifiers
+        """
+        for notifier in db["notifiers"]:
+            if notifier["type"] == "webhook":
+                Webhook.notify(notifier["url"], message)
