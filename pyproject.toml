@@ -1,7 +1,7 @@
 [project]
 name = "scrape-and-ntfy"
-version = "0.1.0"
-description = "An extremely customizable web scraper with a modular notification system and persistent storage via SQLite.  "
+version = "0.1.1"
+description = "An extremely customizable web scraper with a modular notification system and persistent storage via SQLite."
 authors = [
     {name = "slashtechno", email = "77907286+slashtechno@users.noreply.github.com"},
     {name = "mikeymoo5", email = "53538532+Mikeymoo5@users.noreply.github.com"}
@@ -16,7 +16,11 @@ dependencies = [
 ]
 requires-python = ">=3.11"
 readme = "README.md"
-license = {text = "MIT"}
+# license = {text = "MIT"}
+classifiers = [
+"License :: OSI Approved :: MIT License",
+"Programming Language :: Python",
+]
 
 [build-system]
 requires = ["pdm-backend"]
