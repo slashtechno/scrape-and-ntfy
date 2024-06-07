@@ -2,7 +2,6 @@ from scrape_and_ntfy.utils.logging import logger
 from scrape_and_ntfy.utils.cli_args import args
 from scrape_and_ntfy.scraping import scraper, UrlScraper
 import selenium
-from pathlib import Path
 import dataset
 
 
@@ -24,12 +23,14 @@ def main():
         case "safari":
             logger.info("Using Safari")
             scraper.driver = selenium.webdriver.Safari()
-    # UrlScraper(
-    #     url="https://www.example.com",
-    #     css_selector="h1",
-    #     interval=60,
-    # )
+    UrlScraper(
+        url="https://www.example.com",
+        css_selector="h1",
+        interval=5,
+    )
     UrlScraper.clean_db()
+    while True:
+        UrlScraper.scrape_all_urls()
 
 if __name__ == "__main__":
     main()

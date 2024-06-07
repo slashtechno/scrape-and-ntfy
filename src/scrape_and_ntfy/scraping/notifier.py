@@ -1,0 +1,1 @@
+# TODO: Create a modular notifier class that can be used to send notifications in different ways. Include some default methods like Ntfy.sh and webhooks

@@ -39,6 +39,7 @@ def set_argparse() -> None:
         "--log-level",
         help="The log level to use.",
         default=os.getenv("LOG_LEVEL") if os.getenv("LOG_LEVEL") else "INFO",
+        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
     )
     args = argparser.parse_args()
 
