@@ -108,7 +108,6 @@ class UrlScraper:
                     data = UrlScraper.scrape_url(scraper)
                     # Add the data to the scraper in the DB
                     # If the new data is different from the old data, log it
-                    # TODO: Make it so the conditions for notifying are configurable
                     if data is None:
                         if scraper["data"] is None and scraper["last_scrape"] is None:
                             message = f"CSS selector \"{scraper['css_selector']}\" for {scraper['url']} not found on first scrape"

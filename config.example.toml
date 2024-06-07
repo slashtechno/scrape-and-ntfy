@@ -8,3 +8,17 @@ notifiers = [
   notify_on = ["change", "first_scrape", "no_change", "error"]
   }}
 ]
+
+[[scrapers]]
+interval = 60
+url = "https://example.com"
+css_selector = "body > div > p:nth-child(2)"
+notifiers = [
+  {type = "ntfy", config = {
+    url="https://ntfy.sh/example-scraper",
+    notify_on = ["change", "first_scrape", "error", "no_change"],
+    on_click = "https://example.com",
+    priority = 3,
+    tags = "+1"
+  }}
+]

@@ -1,6 +1,7 @@
 from scrape_and_ntfy.utils.logging import logger
 from scrape_and_ntfy.utils.cli_args import args
-from scrape_and_ntfy.scraping import scraper, UrlScraper, Webhook, Notifier
+from scrape_and_ntfy.scraping import scraper, UrlScraper
+from scrape_and_ntfy.scraping import notifier
 import selenium
 import toml
 
@@ -28,13 +29,15 @@ def main():
             # Check if the notify_on values are valid (check against Notifier.NotifyOn)
             notify_on_list = []
             for notify_on in n["config"]["notify_on"]:
-                if notify_on not in [no.value for no in list(Notifier.NotifyOn)]:
+                if notify_on not in [no.value for no in list(notifier.Notifier.NotifyOn)]:
                     raise ValueError(f"Invalid notify_on value: {notify_on}")
                 else:
                     # Get the Enum object from the string value
-                    notify_on_list.append(Notifier.NotifyOn(notify_on))
+                    notify_on_list.append(notifier.Notifier.NotifyOn(notify_on))
             if n["type"] == "webhook":
-                notifiers.append(Webhook(url=n["config"]["url"], notify_on=notify_on_list))
+                notifiers.append(notifier.Webhook(url=n["config"]["url"], notify_on=notify_on_list))
+            elif n["type"] == "ntfy":
+                notifiers.append(notifier.Ntfy(url=n["config"]["url"], notify_on=notify_on_list, on_click=n["config"]["on_click"], priority=n["config"]["priority"], tags=n["config"]["tags"]))
         UrlScraper(
             url=s["url"],
             css_selector=s["css_selector"],
