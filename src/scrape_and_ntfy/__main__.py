@@ -20,11 +20,7 @@ def main():
         case "safari":
             logger.info("Using Safari")
             scraper.driver = selenium.webdriver.Safari()
-    # if args.webhook_url:
-    #     webhook = Webhook(url=args.webhook_url)
-    #     logger.info(f"Using webhook {webhook.url}")
-    # else:
-    #     webhook = None
+
     for s in config["scrapers"]:
         notifiers = []
         for n in s["notifiers"]:
@@ -32,7 +28,6 @@ def main():
                 notifiers.append(Webhook(url=n["config"]["url"]))
         UrlScraper(url=s["url"], css_selector=s["css_selector"], interval=s["interval"], notifiers=notifiers)
     UrlScraper.clean_db()
-    # Notifier.clean_db()
     try:
         while True:
             UrlScraper.scrape_all_urls()

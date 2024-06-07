@@ -26,7 +26,6 @@ class UrlScraper:
                 "css_selector": self.css_selector,
                 "interval": self.interval,
                 "last_scrape": self._last_scrape,
-                # "notifiers": [notifier.id for notifier in notifiers],
             },
             keys=["url", "css_selector", "interval"],
             # `ensure`, by default, is set to True so setting it to True is redundant
@@ -37,10 +36,8 @@ class UrlScraper:
                 "css_selector": db.types.text,
                 "interval": db.types.integer,
                 "last_scrape": db.types.float,
-                # "notifiers": db.types.list,
             },
         )
-        # TODO: Check if the ID was added. If it wasn't, get the ID from the existing row
         if id is False:
             id = table.find_one(url=self.url, css_selector=self.css_selector, interval=self.interval)["id"]
             logger.info(f"Found existing scraper for {self.url} with ID {id}")
