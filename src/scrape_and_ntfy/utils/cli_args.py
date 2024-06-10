@@ -25,7 +25,9 @@ def set_argparse() -> None:
     argparser.add_argument(
         "--db-url",
         help="The URL to the database",
-        default=os.getenv("DB_URL") if os.getenv("DB_URL") else "sqlite:///database/db.db",
+        default=os.getenv("DB_URL")
+        if os.getenv("DB_URL")
+        else "sqlite:///database/db.db",
     )
     argparser.add_argument(
         "--browser",
@@ -36,7 +38,9 @@ def set_argparse() -> None:
     argparser.add_argument(
         "--path-to-toml",
         help="The path to the TOML file",
-        default=os.getenv("PATH_TO_TOML") if os.getenv("PATH_TO_TOML") else "config.toml",
+        default=os.getenv("PATH_TO_TOML")
+        if os.getenv("PATH_TO_TOML")
+        else "config.toml",
     )
     argparser.add_argument(
         "--headless-path",
@@ -53,6 +57,7 @@ def set_argparse() -> None:
         choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
     )
     args = argparser.parse_args()
+
 
 # def validate_path_to_file(path: str) -> str:
 #     """
@@ -75,7 +80,6 @@ def check_required_args(required_args: list[str], argparser: argparse.ArgumentPa
             # raise ValueError(f"{arg} is required")
             logger.critical(f"{arg} is required")
             sys.exit(1)
-
 
 
 set_argparse()

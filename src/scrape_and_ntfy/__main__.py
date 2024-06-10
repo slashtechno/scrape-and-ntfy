@@ -9,7 +9,7 @@ import toml
 
 def main():
     logger.debug(f"Args: {args}")
-    try: 
+    try:
         config = toml.load(args.path_to_toml)
     except FileNotFoundError:
         logger.critical(f"File {args.path_to_toml} not found")
@@ -57,16 +57,28 @@ def main():
             # Check if the notify_on values are valid (check against Notifier.NotifyOn)
             notify_on_list = []
             for notify_on in n["config"]["notify_on"]:
-                if notify_on not in [no.value for no in list(notifier.Notifier.NotifyOn)]:
+                if notify_on not in [
+                    no.value for no in list(notifier.Notifier.NotifyOn)
+                ]:
                     raise ValueError(f"Invalid notify_on value: {notify_on}")
                 else:
                     # Get the Enum object from the string value
                     notify_on_list.append(notifier.Notifier.NotifyOn(notify_on))
             if n["type"] == "webhook":
-                notifiers.append(notifier.Webhook(url=n["config"]["url"], notify_on=notify_on_list))
+                notifiers.append(
+                    notifier.Webhook(url=n["config"]["url"], notify_on=notify_on_list)
+                )
             elif n["type"] == "ntfy":
-                # TODO: Check if optional values are present since right now, a KeyError will be raised if they are not 
-                notifiers.append(notifier.Ntfy(url=n["config"]["url"], notify_on=notify_on_list, on_click=n["config"]["on_click"], priority=n["config"]["priority"], tags=n["config"]["tags"]))
+                # TODO: Check if optional values are present since right now, a KeyError will be raised if they are not
+                notifiers.append(
+                    notifier.Ntfy(
+                        url=n["config"]["url"],
+                        notify_on=notify_on_list,
+                        on_click=n["config"].get("on_click", None),
+                        priority=n["config"].get("priority", None),
+                        tags=n["config"].get("tags", None),
+                    )
+                )
         UrlScraper(
             url=s["url"],
             css_selector=s["css_selector"],

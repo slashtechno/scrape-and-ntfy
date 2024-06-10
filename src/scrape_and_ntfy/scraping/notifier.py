@@ -31,9 +31,12 @@ class Notifier:
     @property
     def notify_on(self):
         return self._notify_on
+
     @notify_on.setter
     def notify_on(self, notify_on):
-        self._notify_on = self.include_sub_notify_events(notify_on=notify_on, sub_notify_on=self.SUB_NOTIFICATION_EVENTS)
+        self._notify_on = self.include_sub_notify_events(
+            notify_on=notify_on, sub_notify_on=self.SUB_NOTIFICATION_EVENTS
+        )
 
     @staticmethod
     def include_sub_notify_events(
@@ -46,7 +49,9 @@ class Notifier:
         for event in notify_on:
             if event in sub_notify_on.keys():
                 notify_on.extend(sub_notify_on[event])
-                logger.debug(f"Added sub-notifications ({sub_notify_on[event]}) for event {event}")
+                logger.debug(
+                    f"Added sub-notifications ({sub_notify_on[event]}) for event {event}"
+                )
         return notify_on
 
 
@@ -91,6 +96,7 @@ class Ntfy(Notifier):
         Instantiate a Ntfy notifier
         For information on the parameters, see https://docs.ntfy.sh/publish/
         """
+        # Not sure if I should handle checking for None here or in notify()
         self.url = url
         self.notify_on = notify_on
         self.on_click = on_click

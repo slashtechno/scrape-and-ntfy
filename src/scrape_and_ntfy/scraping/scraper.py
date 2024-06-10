@@ -11,10 +11,13 @@ driver: webdriver.Chrome = None
 
 # https://docs.sqlalchemy.org/en/20/core/type_basics.html
 
+
 class UrlScraper:
     scrapers = []
 
-    def __init__(self, url: str, css_selector: str, interval: int, notifiers: List[Notifier] = []):
+    def __init__(
+        self, url: str, css_selector: str, interval: int, notifiers: List[Notifier] = []
+    ):
         self.notifiers = notifiers
         self.url = url
         self.css_selector = css_selector
@@ -43,7 +46,9 @@ class UrlScraper:
             },
         )
         if id is False:
-            id = table.find_one(url=self.url, css_selector=self.css_selector, interval=self.interval)["id"]
+            id = table.find_one(
+                url=self.url, css_selector=self.css_selector, interval=self.interval
+            )["id"]
             logger.info(f"Found existing scraper for {self.url} with ID {id}")
         else:
             logger.info(f"Created scraper for {self.url} with ID {id}")
@@ -58,10 +63,12 @@ class UrlScraper:
             }
         )
         self._id = id
+
     @property
     def id(self):
         """read-only id property"""
         return self._id
+
     @classmethod
     def clean_db(cls):
         """
@@ -70,13 +77,17 @@ class UrlScraper:
         for scraper in db["scrapers"]:
             if scraper["id"] not in cls.scraper_ids():
                 db["scrapers"].delete(id=scraper["id"])
-                logger.info(f"Deleted scraper for {scraper['url']} with ID {scraper['id']}")
+                logger.info(
+                    f"Deleted scraper for {scraper['url']} with ID {scraper['id']}"
+                )
+
     @classmethod
     def scraper_ids(cls):
         """
         Get the IDs of the scrapers
         """
         return [scraper["id"] for scraper in cls.scrapers]
+
     @staticmethod
     # As of Python 3.7 dicts are ordered by default
     # But technically it seems that dataset uses OrderedDicts (probably for backwards compatibility)
@@ -85,9 +96,10 @@ class UrlScraper:
         Scrape the website
         """
         driver.get(scraper["url"])
-        try: 
+        try:
             element = driver.find_element(
-            webdriver.common.by.By.CSS_SELECTOR, scraper["css_selector"])
+                webdriver.common.by.By.CSS_SELECTOR, scraper["css_selector"]
+            )
         except NoSuchElementException:
             # The warning is logged after the return, not here
             return None
@@ -114,32 +126,51 @@ class UrlScraper:
                             message = f"CSS selector \"{scraper['css_selector']}\" for {scraper['url']} not found on first scrape"
                         else:
                             message = f"CSS selector \"{scraper['css_selector']}\" for {scraper['url']} not found"
-                        cls.send_to_all_notifiers(scraper, message, Notifier.NotifyOn.ERROR)
+                        cls.send_to_all_notifiers(
+                            scraper, message, Notifier.NotifyOn.ERROR
+                        )
                     elif scraper["data"] != data:
                         if scraper["data"] is None and scraper["last_scrape"] is None:
                             message = f"First scrape for {scraper['url']} with data \"{data}\""
                         else:
                             # If the last data was a number and the new data is a number, compare them as numbers
-                            if convert_to_float(scraper["data"]) and convert_to_float(data):
-                                if float(scraper["data"]) < float(data):
+                            # convert_to_float is used since it checks if the string is still a number after removing non-numeric characters
+                            if convert_to_float(scraper["data"]) and convert_to_float(
+                                data
+                            ):
+                                if convert_to_float(scraper["data"]) < convert_to_float(data):
                                     message = f"Data increased for {scraper['url']} from \"{scraper['data']}\" to \"{data}\""
-                                elif float(scraper["data"]) > float(data):
+                                elif convert_to_float(scraper["data"]) > convert_to_float(data):
                                     message = f"Data decreased for {scraper['url']} from \"{scraper['data']}\" to \"{data}\""
-                                else: 
+                                else:
                                     message = f"Value unchanged but data changed for {scraper['url']} from \"{scraper['data']}\" to \"{data}\""
                             else:
                                 message = f"Data changed for {scraper['url']} from \"{scraper['data']}\" to \"{data}\""
-                        cls.send_to_all_notifiers(scraper, message, Notifier.NotifyOn.CHANGE)
+                        cls.send_to_all_notifiers(
+                            scraper, message, Notifier.NotifyOn.CHANGE
+                        )
                     else:
-                        message = f"Data unchanged for {scraper['url']} with data \"{data}\""
-                        cls.send_to_all_notifiers(scraper, message, Notifier.NotifyOn.NO_CHANGE)
+                        message = (
+                            f"Data unchanged for {scraper['url']} with data \"{data}\""
+                        )
+                        cls.send_to_all_notifiers(
+                            scraper, message, Notifier.NotifyOn.NO_CHANGE
+                        )
                     scraper["last_scrape"] = datetime.now().timestamp()
                     scraper["data"] = data
                     db["scrapers"].update(scraper, ["id"])
             else:
-                logger.debug(f"Scraper with ID {scraper['id']} not in list of scrapers but in database; skipping")
+                logger.debug(
+                    f"Scraper with ID {scraper['id']} not in list of scrapers but in database; skipping"
+                )
+
     @classmethod
-    def send_to_all_notifiers(cls, scraper, message: str, notification_type: Notifier.NotifyOn = Notifier.NotifyOn.CHANGE):
+    def send_to_all_notifiers(
+        cls,
+        scraper,
+        message: str,
+        notification_type: Notifier.NotifyOn = Notifier.NotifyOn.CHANGE,
+    ):
         """
         Send the message to all notifiers
         """
@@ -153,12 +184,17 @@ class UrlScraper:
                 # Depending on the type, log the message with a different level
                 if notification_type == Notifier.NotifyOn.ERROR:
                     logger.warning(message)
-                elif notification_type == Notifier.NotifyOn.CHANGE or notification_type == Notifier.NotifyOn.FIRST_SCRAPE:
+                elif (
+                    notification_type == Notifier.NotifyOn.CHANGE
+                    or notification_type == Notifier.NotifyOn.FIRST_SCRAPE
+                ):
                     logger.info(message)
                 elif notification_type == Notifier.NotifyOn.NO_CHANGE:
                     logger.debug(message)
                 # If the type is in the enum but not implemented, log a error
                 elif notification_type not in list(Notifier.NotifyOn):
-                    logger.error(f"Notifier notification_type {notification_type} not implemented")
+                    logger.error(
+                        f"Notifier notification_type {notification_type} not implemented"
+                    )
                 else:
                     logger.error(f"Unknown notifier type {notification_type}")
