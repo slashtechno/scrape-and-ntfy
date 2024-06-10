@@ -65,6 +65,7 @@ def main():
             if n["type"] == "webhook":
                 notifiers.append(notifier.Webhook(url=n["config"]["url"], notify_on=notify_on_list))
             elif n["type"] == "ntfy":
+                # TODO: Check if optional values are present since right now, a KeyError will be raised if they are not 
                 notifiers.append(notifier.Ntfy(url=n["config"]["url"], notify_on=notify_on_list, on_click=n["config"]["on_click"], priority=n["config"]["priority"], tags=n["config"]["tags"]))
         UrlScraper(
             url=s["url"],

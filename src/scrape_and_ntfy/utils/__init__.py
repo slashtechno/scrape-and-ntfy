@@ -1,3 +1,3 @@
-from scrape_and_ntfy.utils.utils import is_digit
+from scrape_and_ntfy.utils.utils import convert_to_float
 
-__all__ = ["is_digit"]
+__all__ = ["convert_to_float"]

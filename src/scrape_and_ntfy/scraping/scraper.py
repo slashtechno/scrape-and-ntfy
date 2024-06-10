@@ -5,7 +5,7 @@ from datetime import datetime
 from scrape_and_ntfy.utils.logging import logger
 from scrape_and_ntfy.utils.db import db
 from scrape_and_ntfy.scraping.notifier import Notifier
-from scrape_and_ntfy.utils import is_digit
+from scrape_and_ntfy.utils import convert_to_float
 
 driver: webdriver.Chrome = None
 
@@ -119,17 +119,14 @@ class UrlScraper:
                         if scraper["data"] is None and scraper["last_scrape"] is None:
                             message = f"First scrape for {scraper['url']} with data \"{data}\""
                         else:
-                            # If the data is numeric, log if it's up or down
-                            if is_digit(scraper["data"]) and is_digit(data):
+                            # If the last data was a number and the new data is a number, compare them as numbers
+                            if convert_to_float(scraper["data"]) and convert_to_float(data):
                                 if float(scraper["data"]) < float(data):
                                     message = f"Data increased for {scraper['url']} from \"{scraper['data']}\" to \"{data}\""
-                                    cls.send_to_all_notifiers(scraper, message, Notifier.NotifyOn.NUMERIC_UP)
                                 elif float(scraper["data"]) > float(data):
                                     message = f"Data decreased for {scraper['url']} from \"{scraper['data']}\" to \"{data}\""
-                                    cls.send_to_all_notifiers(scraper, message, Notifier.NotifyOn.NUMERIC_DOWN)
                                 else: 
-                                    message = f"Data, but not value, changed for {scraper['url']} from \"{scraper['data']}\" to \"{data}\""
-                                    cls.send_to_all_notifiers(scraper, message, Notifier.NotifyOn.NO_CHANGE)
+                                    message = f"Value unchanged but data changed for {scraper['url']} from \"{scraper['data']}\" to \"{data}\""
                             else:
                                 message = f"Data changed for {scraper['url']} from \"{scraper['data']}\" to \"{data}\""
                         cls.send_to_all_notifiers(scraper, message, Notifier.NotifyOn.CHANGE)
