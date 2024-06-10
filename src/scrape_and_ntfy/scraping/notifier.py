@@ -1,5 +1,5 @@
 import httpx
-from typing import List, Literal
+from typing import List, Literal, Dict
 from enum import Enum
 # from scrape_and_ntfy.utils.logging import logger
 # from scrape_and_ntfy.utils.db import db
@@ -16,10 +16,24 @@ class Notifier:
         CHANGE = "change"
         FIRST_SCRAPE = "first_scrape"
         NO_CHANGE = "no_change"
-        ERROR = "error"
-
+        ERROR = "error",
+        # That can be used for prices or other numeric values
+        NUMERIC_UP = "numeric_up"
+        NUMERIC_DOWN = "numeric_down"
+    SUB_NOTIFICATION_EVENTS =  {
+        NotifyOn.CHANGE: [NotifyOn.NUMERIC_UP, NotifyOn.NUMERIC_DOWN],
+    }
+    @staticmethod
+    def include_sub_notify_events(notify_on: List[NotifyOn], sub_notify_on: Dict[NotifyOn, List[NotifyOn]] = SUB_NOTIFICATION_EVENTS):
+        """
+        When an event such as CHANGE is specified also include the sub-events such as NUMERIC_UP and NUMERIC_DOWN
+        """
+        for event in notify_on:
+            if event in sub_notify_on.keys():
+                notify_on.extend(sub_notify_on[event])
+        return notify_on
 class Webhook(Notifier):
-    def __init__(self, url: str, notify_on: List[Notifier.NotifyOn] = [Notifier.NotifyOn.CHANGE, Notifier.NotifyOn.FIRST_SCRAPE, Notifier.NotifyOn.NO_CHANGE, Notifier.NotifyOn.ERROR]):
+    def __init__(self, url: str, notify_on: List[Notifier.NotifyOn] = [no.name for no in list(Notifier.NotifyOn)]):
         """
         Instantiate a webhook and ~~add the webhook to the database~~
         """
