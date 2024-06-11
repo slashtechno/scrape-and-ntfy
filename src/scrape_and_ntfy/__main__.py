@@ -14,40 +14,36 @@ def main():
     except FileNotFoundError:
         logger.critical(f"File {args.path_to_toml} not found")
         sys.exit(1)
-    if args.browser == "chrome":
+    if args.browser == "chrome" or args.browser == "chromium":
         options = selenium.webdriver.ChromeOptions()
-        if args.headless_path:
+        if args.headless:
             # If headless_path is set, use the binary at that path
             logger.info("Using Chrome headless")
-            options.binary_location = args.headless_path
             options.add_argument("--headless")
         else:
-            logger.info("Using Chrome")
+            logger.info("Not using headlessly")
+        options.binary_location = args.browser_path if args.browser_path else ""
         scraper.driver = selenium.webdriver.Chrome(options=options)
     elif args.browser == "firefox":
         options = selenium.webdriver.FirefoxOptions()
-        if args.headless_path:
+        if args.headless:
             # If headless_path is set, use the binary at that path
             logger.info("Using Firefox headless")
-            options.binary_location = args.headless_path
             options.add_argument("--headless")
         else:
-            logger.info("Using Firefox")
+            logger.info("Not using headlessly")
+        options.binary_location = args.browser_path if args.browser_path else ""
         scraper.driver = selenium.webdriver.Firefox(options=options)
     elif args.browser == "edge":
         options = selenium.webdriver.EdgeOptions()
-        # if args.headless_path:
-        #     # If headless_path is set, use the binary at that path
-        #     logger.info("Using Edge headless")
-        #     options.binary_location = args.headless_path
-        #     options.add_argument("--headless")
-        # else:
-        #     logger.info("Using Edge")
         logger.info("Using Edge")
+        options.binary_location = args.browser_path if args.browser_path else ""
         scraper.driver = selenium.webdriver.Edge(options=options)
     elif args.browser == "safari":
         logger.info("Using Safari")
-        scraper.driver = selenium.webdriver.Safari()
+        options = selenium.webdriver.SafariOptions()
+        # options.binary_location = args.browser_path if args.browser_path else ""
+        scraper.driver = selenium.webdriver.Safari(options=options)
     else:
         raise ValueError("Invalid browser")
 

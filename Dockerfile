@@ -2,6 +2,7 @@
 FROM python:3.12
 
 # install Firefox
+# It seems selenium caches a browser if none is installed so this may not be necessary
 RUN apt-get update && apt-get install -y firefox-esr
 # install PDM
 RUN pip install -U pdm

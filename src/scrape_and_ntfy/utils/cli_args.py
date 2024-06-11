@@ -36,18 +36,27 @@ def set_argparse() -> None:
         choices=["chrome", "firefox", "edge", "safari"],
     )
     argparser.add_argument(
+        "--browser-path",
+        help="The path to the browser binary",
+        default=os.getenv("BROWSER_PATH") if os.getenv("BROWSER_PATH") else "",
+        # type=validate_path_to_file,
+        type=str,
+    )
+    argparser.add_argument(
+        "--headless",
+        help="Use headless mode",
+        action="store_true",
+        default=True 
+        if (
+            os.getenv("HEADLESS") and os.getenv("HEADLESS").lower() == "true" and os.getenv("HEADLESS").lower() != "false"
+        ) else False,
+    )
+    argparser.add_argument(
         "--path-to-toml",
         help="The path to the TOML file",
         default=os.getenv("PATH_TO_TOML")
         if os.getenv("PATH_TO_TOML")
         else "config.toml",
-    )
-    argparser.add_argument(
-        "--headless-path",
-        help="The path to whatever browser binary to use headlessly. Ensure this matches --browser/$BROWSER. This does not work with Safari nor Edge.",
-        default=os.getenv("HEADLESS_PATH") if os.getenv("HEADLESS_PATH") else "",
-        # Not using validate_path_to_file because having "" as the default raises an error
-        type=str,
     )
     debug = argparser.add_argument_group("Debugging options")
     debug.add_argument(
