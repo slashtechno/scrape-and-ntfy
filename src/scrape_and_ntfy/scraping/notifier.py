@@ -105,7 +105,7 @@ class Ntfy(Notifier):
 
     def notify(self, message: str):
         """
-        Notify the Ntfy
+        Notify the Ntfy endpoint
         """
         # Set headers
         headers = {

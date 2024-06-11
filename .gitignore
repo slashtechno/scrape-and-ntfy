@@ -46,7 +46,7 @@ pip-delete-this-directory.txt
 htmlcov/
 .tox/
 .nox/
-.coverage
+.coveraget
 .coverage.*
 .cache
 nosetests.xml
@@ -56,7 +56,6 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 cover/
-test.html
 
 # Translations
 *.mo

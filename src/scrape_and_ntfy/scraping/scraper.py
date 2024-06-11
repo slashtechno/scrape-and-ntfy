@@ -133,22 +133,30 @@ class UrlScraper:
                         if scraper["data"] is None and scraper["last_scrape"] is None:
                             message = f"First scrape for {scraper['url']} with data \"{data}\""
                         else:
+                            notification_event = Notifier.NotifyOn.CHANGE
                             # If the last data was a number and the new data is a number, compare them as numbers
                             # convert_to_float is used since it checks if the string is still a number after removing non-numeric characters
                             if convert_to_float(scraper["data"]) and convert_to_float(
                                 data
                             ):
-                                if convert_to_float(scraper["data"]) < convert_to_float(data):
-                                    message = f"Data increased for {scraper['url']} from \"{scraper['data']}\" to \"{data}\""
-                                elif convert_to_float(scraper["data"]) > convert_to_float(data):
-                                    message = f"Data decreased for {scraper['url']} from \"{scraper['data']}\" to \"{data}\""
+                                if convert_to_float(scraper["data"]) < convert_to_float(
+                                    data
+                                ):
+                                    message = f"Value increased for {scraper['url']} from \"{scraper['data']}\" to \"{data}\""
+                                    notification_event = Notifier.NotifyOn.NUMERIC_UP
+                                elif convert_to_float(
+                                    scraper["data"]
+                                ) > convert_to_float(data):
+                                    message = f"Value decreased for {scraper['url']} from \"{scraper['data']}\" to \"{data}\""
+                                    notification_event = Notifier.NotifyOn.NUMERIC_DOWN
                                 else:
                                     message = f"Value unchanged but data changed for {scraper['url']} from \"{scraper['data']}\" to \"{data}\""
+                                    notification_event = Notifier.NotifyOn.NO_CHANGE
                             else:
                                 message = f"Data changed for {scraper['url']} from \"{scraper['data']}\" to \"{data}\""
-                        cls.send_to_all_notifiers(
-                            scraper, message, Notifier.NotifyOn.CHANGE
-                        )
+                            cls.send_to_all_notifiers(
+                                scraper, message, notification_event
+                            )
                     else:
                         message = (
                             f"Data unchanged for {scraper['url']} with data \"{data}\""
@@ -181,12 +189,15 @@ class UrlScraper:
                 for notifier in scraper["notifiers"]:
                     if notification_type in notifier.notify_on:
                         notifier.notify(message)
+                    
                 # Depending on the type, log the message with a different level
                 if notification_type == Notifier.NotifyOn.ERROR:
                     logger.warning(message)
                 elif (
                     notification_type == Notifier.NotifyOn.CHANGE
                     or notification_type == Notifier.NotifyOn.FIRST_SCRAPE
+                    or notification_type == Notifier.NotifyOn.NUMERIC_UP 
+                    or notification_type == Notifier.NotifyOn.NUMERIC_DOWN
                 ):
                     logger.info(message)
                 elif notification_type == Notifier.NotifyOn.NO_CHANGE:

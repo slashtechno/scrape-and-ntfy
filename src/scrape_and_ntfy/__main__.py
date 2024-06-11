@@ -56,7 +56,8 @@ def main():
         for n in s["notifiers"]:
             # Check if the notify_on values are valid (check against Notifier.NotifyOn)
             notify_on_list = []
-            for notify_on in n["config"]["notify_on"]:
+            # for notify_on in n["config"]["notify_on"]:
+            for notify_on in n["config"].get("notify_on", []):
                 if notify_on not in [
                     no.value for no in list(notifier.Notifier.NotifyOn)
                 ]:

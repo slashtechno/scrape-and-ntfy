@@ -74,8 +74,8 @@ def check_required_args(required_args: list[str], argparser: argparse.ArgumentPa
     Check if required arguments are set
     Useful if using enviroment variables with argparse as default and required are mutually exclusive
     """
+    args = argparser.parse_args()
     for arg in required_args:
-        args = argparser.parse_args()
         if getattr(args, arg) is None:
             # raise ValueError(f"{arg} is required")
             logger.critical(f"{arg} is required")
