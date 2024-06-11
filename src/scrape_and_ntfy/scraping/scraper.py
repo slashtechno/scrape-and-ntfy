@@ -16,12 +16,13 @@ class UrlScraper:
     scrapers = []
 
     def __init__(
-        self, url: str, css_selector: str, interval: int, notifiers: List[Notifier] = []
+        self, url: str, css_selector: str, interval: int, verbose_notifications: bool = False, notifiers: List[Notifier] = []
     ):
         self.notifiers = notifiers
         self.url = url
         self.css_selector = css_selector
         self.interval = interval
+        self.verbose_notifications = verbose_notifications
         self._last_scrape = None
         # By default, an auto-incrementing primary key (id) is created
         table = db["scrapers"]
@@ -30,6 +31,7 @@ class UrlScraper:
                 "url": self.url,
                 "css_selector": self.css_selector,
                 "interval": self.interval,
+                "verbose_notifications": self.verbose_notifications,
                 "last_scrape": self._last_scrape,
                 "data": None,
             },
@@ -41,6 +43,7 @@ class UrlScraper:
                 "url": db.types.text,
                 "css_selector": db.types.text,
                 "interval": db.types.integer,
+                "verbose_notifications": db.types.boolean,
                 "last_scrape": db.types.float,
                 "data": db.types.text,
             },
@@ -136,30 +139,29 @@ class UrlScraper:
                             notification_event = Notifier.NotifyOn.CHANGE
                             # If the last data was a number and the new data is a number, compare them as numbers
                             # convert_to_float is used since it checks if the string is still a number after removing non-numeric characters
-                            if convert_to_float(scraper["data"]) and convert_to_float(
-                                data
-                            ):
+                            if isinstance(convert_to_float(scraper["data"]), float) and isinstance(convert_to_float(data), float):
                                 if convert_to_float(scraper["data"]) < convert_to_float(
                                     data
                                 ):
-                                    message = f"Value increased for {scraper['url']} from \"{scraper['data']}\" to \"{data}\""
+                                    message = f"Value increased{(f' for {scraper['url']}' if scraper["verbose_notifications"] else '')} from \"{scraper['data']}\" to \"{data}\""
+                                    # message = f"Value increased {scraper['url']} from \"{scraper['data']}\" to \"{data}\""
                                     notification_event = Notifier.NotifyOn.NUMERIC_UP
                                 elif convert_to_float(
                                     scraper["data"]
                                 ) > convert_to_float(data):
-                                    message = f"Value decreased for {scraper['url']} from \"{scraper['data']}\" to \"{data}\""
+                                    message = f"Value decreased{(f' for {scraper['url']}' if scraper["verbose_notifications"] else '')} from \"{scraper['data']}\" to \"{data}\""
                                     notification_event = Notifier.NotifyOn.NUMERIC_DOWN
                                 else:
-                                    message = f"Value unchanged but data changed for {scraper['url']} from \"{scraper['data']}\" to \"{data}\""
+                                    message = f"Value unchanged but data changed{(f' for {scraper['url']}' if scraper["verbose_notifications"] else '')} from \"{scraper['data']}\" to \"{data}\""
                                     notification_event = Notifier.NotifyOn.NO_CHANGE
                             else:
-                                message = f"Data changed for {scraper['url']} from \"{scraper['data']}\" to \"{data}\""
+                                message = f"Data changed{(f' for {scraper['url']}' if scraper["verbose_notifications"] else '')} from \"{scraper['data']}\" to \"{data}\""
                             cls.send_to_all_notifiers(
                                 scraper, message, notification_event
                             )
                     else:
                         message = (
-                            f"Data unchanged for {scraper['url']} with data \"{data}\""
+                            f"Data unchanged {(f' for {scraper['url']}' if scraper["verbose_notifications"] else '')} with data \"{data}\""
                         )
                         cls.send_to_all_notifiers(
                             scraper, message, Notifier.NotifyOn.NO_CHANGE

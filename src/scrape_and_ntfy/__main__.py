@@ -84,6 +84,7 @@ def main():
             url=s["url"],
             css_selector=s["css_selector"],
             interval=s["interval"],
+            verbose_notifications=s.get("verbose_notifications", False),
             notifiers=notifiers,
         )
     UrlScraper.clean_db()

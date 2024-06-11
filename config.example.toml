@@ -2,6 +2,7 @@
 interval = 60
 url = "https://example.com"
 css_selector = "h1"
+verbose_notifications = false
 notifiers = [
   {type = "webhook", config = {
   url = "https://example.com/webhook",
