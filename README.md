@@ -48,8 +48,11 @@ An extremely customizable web scraper with a modular notification system and per
 1. Clone the repository  
     - `git clone https://github.com/slashtechno/scrape-and-ntfy`
 2. Change directory into the repository
-    - `cd scrape-and-ntfy`
-3. Configure via `config.toml`  
+    - `cd scrape-and-ntfy`  
+3. Run `pdm install`  
+    - This will install the dependencies in a virtual environment  
+    - You may need to specify an interpreter with `pdm use`  
+4. Configure via `config.toml`  
     - Optionally, you can configure some other options via environment variables or command-line arguments
-4. `pdm run python -m scrape_and_ntfy`  
+5. `pdm run python -m scrape_and_ntfy`  
     - This will run the bot with the configuration in `config.toml`

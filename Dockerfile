@@ -2,8 +2,9 @@
 FROM python:3.12
 
 # install Firefox
-# It seems selenium caches a browser if none is installed so this may not be necessary
+# Whilst selenium should be able to download and cache browsers, it seems to be unable to do so properly in Docker
 RUN apt-get update && apt-get install -y firefox-esr
+# RUN apt-get update && apt-get upgrade -y
 # install PDM
 RUN pip install -U pdm
 # disable update check
@@ -12,8 +13,11 @@ ENV PDM_CHECK_UPDATE=false
 COPY README.md pyproject.toml pdm.lock LICENSE .pdm-python src/ /app/
 # set working directory to /app
 WORKDIR /app
+# Set PDM python interpreter to whatever is retruned by which python3
+# https://github.com/pdm-project/pdm/issues/2943 
+RUN pdm use $(which python3)
 # install dependencies
 RUN pdm install --prod
 # set entrypoint to pdm run -- scrape-and-ntfy
+# ENTRYPOINT ["pdm", "run", "--", "scrape-and-ntfy", "--headless"]
 ENTRYPOINT ["pdm", "run", "--", "scrape-and-ntfy", "--headless", "--browser-path", "/usr/bin/firefox-esr", "--browser", "firefox"]
-# ENTRYPOINT ["which", "firefox-esr"]
