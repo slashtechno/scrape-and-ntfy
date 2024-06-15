@@ -83,7 +83,7 @@ def main():
             url=s["url"],
             css_selector=s["css_selector"],
             interval=s.get("interval", 60),
-            verbose_notifications=s.get("verbose_notifications", False),
+            name = s.get("name", None),
             notifiers=notifiers,
             scroll_to_bottom=s.get("scroll_to_bottom", False),
         )

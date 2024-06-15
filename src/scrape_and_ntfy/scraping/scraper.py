@@ -21,15 +21,22 @@ class UrlScraper:
         url: str,
         css_selector: str,
         interval: int,
-        verbose_notifications: bool = False,
+        name: str = None,
         notifiers: List[Notifier] = [],
         scroll_to_bottom: bool = False,
     ):
+        """
+        Add a scraper to the database and the list of scrapers
+        If a name is not provided, the name will be f"{url} ({css_selector})"
+        A duplicate scraper will not be created if the URL, CSS selector, and name are the same. Thus, you can use name to differentiate between scrapers if you need multiple scrapers with the same URL, CSS selector.
+        If you rename a scraper and then run the script, a new scraper will be created with an empty last_scrape and data. When the database is cleaned, the old scraper will be deleted.
+        """
         self.notifiers = notifiers
         self.url = url
         self.css_selector = css_selector
         self.interval = interval
-        self.verbose_notifications = verbose_notifications
+        # Set name to the URL and CSS selector if not provided
+        self.name = name if name else f"{url} ({css_selector})"
         self.scroll_to_bottom = scroll_to_bottom
         self._last_scrape = None
         # By default, an auto-incrementing primary key (id) is created
@@ -39,14 +46,12 @@ class UrlScraper:
                 "url": self.url,
                 "css_selector": self.css_selector,
                 "interval": self.interval,
-                # Verbose notifications and scroll to bottom really don't need to be in the database
-                # But otherwise more code would need to be added to search for the scraper in the list of scrapers from the db entry
-                "verbose_notifications": self.verbose_notifications,
+                "name": self.name,
                 "scroll_to_bottom": self.scroll_to_bottom,
                 "last_scrape": self._last_scrape,
                 "data": None,
             },
-            keys=["url", "css_selector", "interval"],
+            keys=["url", "css_selector", "name"],
             # `ensure`, by default, is set to True so setting it to True is redundant
             # When set to True, it will create the columns if they don't exist, which is what we want
             ensure=True,
@@ -54,7 +59,7 @@ class UrlScraper:
                 "url": db.types.text,
                 "css_selector": db.types.text,
                 "interval": db.types.integer,
-                "verbose_notifications": db.types.boolean,
+                "name": db.types.text,
                 "scroll_to_bottom": db.types.boolean,
                 "last_scrape": db.types.float,
                 "data": db.types.text,
@@ -62,7 +67,7 @@ class UrlScraper:
         )
         if id is False:
             id = table.find_one(
-                url=self.url, css_selector=self.css_selector, interval=self.interval
+                url=self.url, css_selector=self.css_selector, name=self.name
             )["id"]
             logger.info(f"Found existing scraper for {self.url} with ID {id}")
         else:
@@ -135,6 +140,7 @@ class UrlScraper:
                     # If the element is found, return the text
                     return element.text
                 if new_height == last_height:
+                    logger.debug("Reached bottom of page")
                     break
                 last_height = new_height
         else:
@@ -154,7 +160,6 @@ class UrlScraper:
         """
         Scrape all URLs that have their interval met/exceeded (or have never been scraped and have a null last scrape)
         """
-        # TODO: Instead of URL and class name make an alias that defaults to the URL and class name
         # Not doing `for scraper in cls.scrapers` because we want to update the database and compare the data and last scrape time
         for scraper in db["scrapers"]:
             if scraper["id"] in cls.scraper_ids():
@@ -167,15 +172,15 @@ class UrlScraper:
                     # If the new data is different from the old data, log it
                     if data is None:
                         if scraper["data"] is None and scraper["last_scrape"] is None:
-                            message = f"CSS selector \"{scraper['css_selector']}\" for {scraper['url']} not found on first scrape"
+                            message = f"{scraper["name"]} not found on first scrape"
                         else:
-                            message = f"CSS selector \"{scraper['css_selector']}\" for {scraper['url']} not found"
+                            message = f"{scraper["name"]} not found"
                         cls.send_to_all_notifiers(
                             scraper, message, Notifier.NotifyOn.ERROR
                         )
                     elif scraper["data"] != data:
                         if scraper["data"] is None and scraper["last_scrape"] is None:
-                            message = f"First scrape for {scraper['url']} with data \"{data}\""
+                            message = f"First scrape for {scraper["name"]} with data \"{data}\""
                             cls.send_to_all_notifiers(
                                 scraper, message, Notifier.NotifyOn.FIRST_SCRAPE
                             )
@@ -189,24 +194,23 @@ class UrlScraper:
                                 if convert_to_float(scraper["data"]) < convert_to_float(
                                     data
                                 ):
-                                    message = f"Value increased{(f' for {scraper['url']}' if scraper["verbose_notifications"] else '')} from \"{scraper['data']}\" to \"{data}\""
-                                    # message = f"Value increased {scraper['url']} from \"{scraper['data']}\" to \"{data}\""
+                                    message = f"Value increased for {scraper["name"]} from \"{scraper["data"]}\" to \"{data}\""
                                     notification_event = Notifier.NotifyOn.NUMERIC_UP
                                 elif convert_to_float(
                                     scraper["data"]
                                 ) > convert_to_float(data):
-                                    message = f"Value decreased{(f' for {scraper['url']}' if scraper["verbose_notifications"] else '')} from \"{scraper['data']}\" to \"{data}\""
+                                    message = f"Value decreased for {scraper["name"]} from \"{scraper["data"]}\" to \"{data}\""
                                     notification_event = Notifier.NotifyOn.NUMERIC_DOWN
                                 else:
-                                    message = f"Value unchanged but data changed{(f' for {scraper['url']}' if scraper["verbose_notifications"] else '')} from \"{scraper['data']}\" to \"{data}\""
+                                    message = f"Value unchanged but data changed for {scraper["name"]} from \"{scraper["data"]}\" to \"{data}\""
                                     notification_event = Notifier.NotifyOn.NO_CHANGE
                             else:
-                                message = f"Data changed{(f' for {scraper['url']}' if scraper["verbose_notifications"] else '')} from \"{scraper['data']}\" to \"{data}\""
+                                message = f"Data changed for {scraper["name"]} from \"{scraper["data"]}\" to \"{data}\""
                             cls.send_to_all_notifiers(
                                 scraper, message, notification_event
                             )
                     else:
-                        message = f"Data unchanged {(f' for {scraper['url']}' if scraper["verbose_notifications"] else '')} with data \"{data}\""
+                        message = f"Data unchanged for {scraper["name"]} with data \"{data}\""
                         cls.send_to_all_notifiers(
                             scraper, message, Notifier.NotifyOn.NO_CHANGE
                         )

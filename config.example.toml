@@ -1,8 +1,10 @@
 [[scrapers]]
+# The name really doesn't need to be set
+# However, it makes for cleaner logs and notifications
+name = "Example Scraper"
 interval = 60
 url = "https://example.com"
 css_selector = "h1"
-verbose_notifications = false
 # scroll_to_bottom attempts to scroll to the bottom of the page until the css_selector is found or the end is reached
 scroll_to_bottom = true
 notifiers = [
