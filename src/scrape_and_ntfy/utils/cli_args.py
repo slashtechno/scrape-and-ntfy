@@ -30,6 +30,18 @@ def set_argparse() -> None:
         else "sqlite:///database/db.db",
     )
     argparser.add_argument(
+        "--scroll-to-bottom",
+        help="Attempt to scroll to the bottom of the page before scraping. Read https://stackoverflow.com/a/27760083 for more information",
+        action="store_true",
+        default=True
+        if (
+            os.getenv("SCROLL_TO_BOTTOM")
+            and os.getenv("SCROLL_TO_BOTTOM").lower() == "true"
+            and os.getenv("SCROLL_TO_BOTTOM").lower() != "false"
+        )
+        else False,
+    )
+    argparser.add_argument(
         "--browser",
         help="The browser to use. Generally, if the browser is based on Chromium, use Chrome and if it's based on Firefox, use Firefox.",
         default=os.getenv("BROWSER") if os.getenv("BROWSER") else "chrome",
@@ -46,10 +58,13 @@ def set_argparse() -> None:
         "--headless",
         help="Use headless mode",
         action="store_true",
-        default=True 
+        default=True
         if (
-            os.getenv("HEADLESS") and os.getenv("HEADLESS").lower() == "true" and os.getenv("HEADLESS").lower() != "false"
-        ) else False,
+            os.getenv("HEADLESS")
+            and os.getenv("HEADLESS").lower() == "true"
+            and os.getenv("HEADLESS").lower() != "false"
+        )
+        else False,
     )
     argparser.add_argument(
         "--path-to-toml",

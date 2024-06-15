@@ -3,9 +3,15 @@ interval = 60
 url = "https://example.com"
 css_selector = "h1"
 verbose_notifications = false
+# scroll_to_bottom attempts to scroll to the bottom of the page until the css_selector is found or the end is reached
+scroll_to_bottom = true
 notifiers = [
   {type = "webhook", config = {
   url = "https://example.com/webhook",
+  # Slack, for example, uses "text" as the key for the message
+  # Discord uses "content"
+  # Check the documentation of the service you are using
+  content_field = "text",
   notify_on = ["change", "first_scrape", "no_change", "error"]
   }}
 ]
@@ -16,6 +22,8 @@ url = "https://example.com"
 css_selector = "body > div > p:nth-child(2)"
 notifiers = [
   {type = "ntfy", config = {
+    # Ntfy can be self-hosted easily
+    # Their free tier on their hosted service works fine, but their paid plan seems to include some cool features
     url="https://ntfy.sh/example-scraper",
     # For information on the parameters, see https://docs.ntfy.sh/publish/
     notify_on = ["change", "first_scrape", "error", "no_change"],

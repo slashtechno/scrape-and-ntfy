@@ -2,6 +2,7 @@ import httpx
 from typing import List, Literal, Dict
 from enum import Enum
 from scrape_and_ntfy.utils.logging import logger
+import json
 # from scrape_and_ntfy.utils.db import db
 
 
@@ -59,6 +60,7 @@ class Webhook(Notifier):
     def __init__(
         self,
         url: str,
+        content_field: str = "content",
         notify_on: List[Notifier.NotifyOn] = [
             no.name for no in list(Notifier.NotifyOn)
         ],
@@ -68,6 +70,7 @@ class Webhook(Notifier):
         """
         self.url = url
         self.notify_on = notify_on
+        self.content_field = content_field
 
     # @property
     # def id(self):
@@ -78,7 +81,14 @@ class Webhook(Notifier):
         """
         Notify the webhook
         """
-        httpx.post(self.url, data={"content": message})
+        resp = httpx.post(
+            self.url,
+            headers={"Content-Type": "application/json"},
+            data=json.dumps({self.content_field: message}),
+        )
+        logger.debug(
+            f"Webhook text response: {resp.text} | status code: {resp.status_code}"
+        )
 
 
 class Ntfy(Notifier):

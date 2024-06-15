@@ -63,7 +63,11 @@ def main():
                     notify_on_list.append(notifier.Notifier.NotifyOn(notify_on))
             if n["type"] == "webhook":
                 notifiers.append(
-                    notifier.Webhook(url=n["config"]["url"], notify_on=notify_on_list)
+                    notifier.Webhook(
+                        url=n["config"]["url"],
+                        content_field=n["config"].get("content_field", "content"),
+                        notify_on=notify_on_list,
+                    )
                 )
             elif n["type"] == "ntfy":
                 # TODO: Check if optional values are present since right now, a KeyError will be raised if they are not
@@ -79,9 +83,11 @@ def main():
         UrlScraper(
             url=s["url"],
             css_selector=s["css_selector"],
-            interval=s["interval"],
+            interval=s.get("interval", 60),
             verbose_notifications=s.get("verbose_notifications", False),
             notifiers=notifiers,
+            # TODO: When the configuration options are improved, configure this via the config file instead
+            scroll_to_bottom=s.get("scroll_to_bottom", False),
         )
     UrlScraper.clean_db()
     try:

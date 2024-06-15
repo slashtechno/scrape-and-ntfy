@@ -6,6 +6,7 @@ from scrape_and_ntfy.utils.logging import logger
 from scrape_and_ntfy.utils.db import db
 from scrape_and_ntfy.scraping.notifier import Notifier
 from scrape_and_ntfy.utils import convert_to_float
+import time
 
 driver: webdriver.Chrome = None
 
@@ -16,13 +17,20 @@ class UrlScraper:
     scrapers = []
 
     def __init__(
-        self, url: str, css_selector: str, interval: int, verbose_notifications: bool = False, notifiers: List[Notifier] = []
+        self,
+        url: str,
+        css_selector: str,
+        interval: int,
+        verbose_notifications: bool = False,
+        notifiers: List[Notifier] = [],
+        scroll_to_bottom: bool = False,
     ):
         self.notifiers = notifiers
         self.url = url
         self.css_selector = css_selector
         self.interval = interval
         self.verbose_notifications = verbose_notifications
+        self.scroll_to_bottom = scroll_to_bottom
         self._last_scrape = None
         # By default, an auto-incrementing primary key (id) is created
         table = db["scrapers"]
@@ -31,7 +39,10 @@ class UrlScraper:
                 "url": self.url,
                 "css_selector": self.css_selector,
                 "interval": self.interval,
+                # Verbose notifications and scroll to bottom really don't need to be in the database
+                # But otherwise more code would need to be added to search for the scraper in the list of scrapers from the db entry
                 "verbose_notifications": self.verbose_notifications,
+                "scroll_to_bottom": self.scroll_to_bottom,
                 "last_scrape": self._last_scrape,
                 "data": None,
             },
@@ -44,6 +55,7 @@ class UrlScraper:
                 "css_selector": db.types.text,
                 "interval": db.types.integer,
                 "verbose_notifications": db.types.boolean,
+                "scroll_to_bottom": db.types.boolean,
                 "last_scrape": db.types.float,
                 "data": db.types.text,
             },
@@ -99,21 +111,50 @@ class UrlScraper:
         Scrape the website
         """
         driver.get(scraper["url"])
-        try:
-            element = driver.find_element(
-                webdriver.common.by.By.CSS_SELECTOR, scraper["css_selector"]
-            )
-        except NoSuchElementException:
-            # The warning is logged after the return, not here
-            return None
-        # https://selenium-python.readthedocs.io/api.html#module-selenium.webdriver.remote.webelement
-        return element.text
+        if scraper["scroll_to_bottom"]:
+            # TODO: Add a "max time" that dictates how long the scraper will spend scrolling. Perhaps also add an option for SCROLL_PAUSE_TIME then
+            # https://stackoverflow.com/a/27760083/
+            SCROLL_PAUSE_TIME = 3
+            last_height = driver.execute_script("return document.body.scrollHeight")
+            while True:
+                # Scroll down to bottom
+                driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+
+                # Wait to load page
+                time.sleep(SCROLL_PAUSE_TIME)
+
+                # Calculate new scroll height and compare with last scroll height
+                new_height = driver.execute_script("return document.body.scrollHeight")
+                try:
+                    element = driver.find_element(
+                        webdriver.common.by.By.CSS_SELECTOR, scraper["css_selector"]
+                    )
+                except NoSuchElementException:
+                    pass
+                else:
+                    # If the element is found, return the text
+                    return element.text
+                if new_height == last_height:
+                    break
+                last_height = new_height
+        else:
+            try:
+                element = driver.find_element(
+                    webdriver.common.by.By.CSS_SELECTOR, scraper["css_selector"]
+                )
+            except NoSuchElementException:
+                # The warning is logged after the return, not here
+                return None
+            else:
+                return element.text
+        return None
 
     @classmethod
     def scrape_all_urls(cls):
         """
         Scrape all URLs that have their interval met/exceeded (or have never been scraped and have a null last scrape)
         """
+        # TODO: Instead of URL and class name make an alias that defaults to the URL and class name
         # Not doing `for scraper in cls.scrapers` because we want to update the database and compare the data and last scrape time
         for scraper in db["scrapers"]:
             if scraper["id"] in cls.scraper_ids():
@@ -135,11 +176,16 @@ class UrlScraper:
                     elif scraper["data"] != data:
                         if scraper["data"] is None and scraper["last_scrape"] is None:
                             message = f"First scrape for {scraper['url']} with data \"{data}\""
+                            cls.send_to_all_notifiers(
+                                scraper, message, Notifier.NotifyOn.FIRST_SCRAPE
+                            )
                         else:
                             notification_event = Notifier.NotifyOn.CHANGE
                             # If the last data was a number and the new data is a number, compare them as numbers
                             # convert_to_float is used since it checks if the string is still a number after removing non-numeric characters
-                            if isinstance(convert_to_float(scraper["data"]), float) and isinstance(convert_to_float(data), float):
+                            if isinstance(
+                                convert_to_float(scraper["data"]), float
+                            ) and isinstance(convert_to_float(data), float):
                                 if convert_to_float(scraper["data"]) < convert_to_float(
                                     data
                                 ):
@@ -160,9 +206,7 @@ class UrlScraper:
                                 scraper, message, notification_event
                             )
                     else:
-                        message = (
-                            f"Data unchanged {(f' for {scraper['url']}' if scraper["verbose_notifications"] else '')} with data \"{data}\""
-                        )
+                        message = f"Data unchanged {(f' for {scraper['url']}' if scraper["verbose_notifications"] else '')} with data \"{data}\""
                         cls.send_to_all_notifiers(
                             scraper, message, Notifier.NotifyOn.NO_CHANGE
                         )
@@ -191,14 +235,14 @@ class UrlScraper:
                 for notifier in scraper["notifiers"]:
                     if notification_type in notifier.notify_on:
                         notifier.notify(message)
-                    
+
                 # Depending on the type, log the message with a different level
                 if notification_type == Notifier.NotifyOn.ERROR:
                     logger.warning(message)
                 elif (
                     notification_type == Notifier.NotifyOn.CHANGE
                     or notification_type == Notifier.NotifyOn.FIRST_SCRAPE
-                    or notification_type == Notifier.NotifyOn.NUMERIC_UP 
+                    or notification_type == Notifier.NotifyOn.NUMERIC_UP
                     or notification_type == Notifier.NotifyOn.NUMERIC_DOWN
                 ):
                     logger.info(message)
