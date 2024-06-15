@@ -70,7 +70,6 @@ def main():
                     )
                 )
             elif n["type"] == "ntfy":
-                # TODO: Check if optional values are present since right now, a KeyError will be raised if they are not
                 notifiers.append(
                     notifier.Ntfy(
                         url=n["config"]["url"],
@@ -86,7 +85,6 @@ def main():
             interval=s.get("interval", 60),
             verbose_notifications=s.get("verbose_notifications", False),
             notifiers=notifiers,
-            # TODO: When the configuration options are improved, configure this via the config file instead
             scroll_to_bottom=s.get("scroll_to_bottom", False),
         )
     UrlScraper.clean_db()
