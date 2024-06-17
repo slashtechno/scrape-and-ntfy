@@ -88,12 +88,17 @@ def main():
             notifiers=notifiers,
             scroll_to_bottom=s.get("scroll_to_bottom", False),
         )
-    UrlScraper.clean_db()
+    if args.no_clean_db:
+        logger.info("Not cleaning the database")
+    else:
+        logger.info("Cleaning the database")
+        UrlScraper.clean_db()
+    logger.info("Starting to scrape")
     try:
         while True:
             UrlScraper.scrape_all_urls()
-    except KeyboardInterrupt:
-        logger.info("Keyboard interrupt detected; exiting")
+    except (KeyboardInterrupt, SystemExit):
+        logger.info("Interrupt detected; exiting")
         scraper.driver.quit()
         exit(0)
 

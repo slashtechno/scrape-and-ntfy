@@ -23,13 +23,35 @@ def set_argparse() -> None:
         description="Scrape a website and notify regarding specific changes"
     )
     argparser.add_argument(
+        "--path-to-toml",
+        help="The path to the TOML file",
+        default=os.getenv("PATH_TO_TOML")
+        if os.getenv("PATH_TO_TOML")
+        else "config.toml",
+    )
+    database = argparser.add_argument_group("Database options")
+    database.add_argument(
         "--db-url",
         help="The URL to the database",
         default=os.getenv("DB_URL")
         if os.getenv("DB_URL")
         else "sqlite:///database/db.db",
     )
-    argparser.add_argument(
+    database.add_argument(
+        "--no-clean-db",
+        help="Do not clean the database before scraping. Cleaning the database removes entries no longer present in config.toml",
+        action="store_true",
+        default=True
+        if (
+            os.getenv("NO_CLEAN_DB")
+            and os.getenv("NO_CLEAN_DB").lower() == "true"
+            and os.getenv("NO_CLEAN_DB").lower() != "false"
+        )
+        else False,
+    )
+
+    scraping = argparser.add_argument_group("Scraping options")
+    scraping.add_argument(
         "--scroll-to-bottom",
         help="Attempt to scroll to the bottom of the page before scraping. Read https://stackoverflow.com/a/27760083 for more information",
         action="store_true",
@@ -41,20 +63,20 @@ def set_argparse() -> None:
         )
         else False,
     )
-    argparser.add_argument(
+    scraping.add_argument(
         "--browser",
         help="The browser to use. Generally, if the browser is based on Chromium, use Chrome and if it's based on Firefox, use Firefox.",
         default=os.getenv("BROWSER") if os.getenv("BROWSER") else "chrome",
         choices=["chrome", "firefox", "edge", "safari"],
     )
-    argparser.add_argument(
+    scraping.add_argument(
         "--browser-path",
         help="The path to the browser binary",
         default=os.getenv("BROWSER_PATH") if os.getenv("BROWSER_PATH") else "",
         # type=validate_path_to_file,
         type=str,
     )
-    argparser.add_argument(
+    scraping.add_argument(
         "--headless",
         help="Use headless mode",
         action="store_true",
@@ -65,13 +87,6 @@ def set_argparse() -> None:
             and os.getenv("HEADLESS").lower() != "false"
         )
         else False,
-    )
-    argparser.add_argument(
-        "--path-to-toml",
-        help="The path to the TOML file",
-        default=os.getenv("PATH_TO_TOML")
-        if os.getenv("PATH_TO_TOML")
-        else "config.toml",
     )
     debug = argparser.add_argument_group("Debugging options")
     debug.add_argument(
