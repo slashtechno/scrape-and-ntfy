@@ -7,6 +7,8 @@ url = "https://example.com"
 css_selector = "h1"
 # scroll_to_bottom attempts to scroll to the bottom of the page until the css_selector is found or the end is reached
 scroll_to_bottom = true
+# The number of seconds to wait between scrolling (if scroll_to_bottom is enabled) or, if scroll_to_bottom is false, the number of seconds to wait before attempting to find element
+pause_time = 10
 notifiers = [
   {type = "webhook", config = {
   url = "https://example.com/webhook",

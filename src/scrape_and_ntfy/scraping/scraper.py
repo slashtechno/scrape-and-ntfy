@@ -20,8 +20,9 @@ class UrlScraper:
         self,
         url: str,
         css_selector: str,
-        interval: int,
+        interval: int = 60,
         name: str = None,
+        pause_time: int = 0,
         notifiers: List[Notifier] = [],
         scroll_to_bottom: bool = False,
     ):
@@ -30,6 +31,7 @@ class UrlScraper:
         If a name is not provided, the name will be f"{url} ({css_selector})"
         A duplicate scraper will not be created if the URL, CSS selector, and name are the same. Thus, you can use name to differentiate between scrapers if you need multiple scrapers with the same URL, CSS selector.
         If you rename a scraper and then run the script, a new scraper will be created with an empty last_scrape and data. When the database is cleaned, the old scraper will be deleted.
+        You can set pause_time to the number of seconds to wait between scrolling (if scroll_to_bottom is True) or, if scroll_to_bottom is False, the number of seconds to wait before attempting to find element.
         """
         self.notifiers = notifiers
         self.url = url
@@ -37,6 +39,7 @@ class UrlScraper:
         self.interval = interval
         # Set name to the URL and CSS selector if not provided
         self.name = name if name else f"{url} ({css_selector})"
+        self.pause_time = pause_time
         self.scroll_to_bottom = scroll_to_bottom
         self._last_scrape = None
         # By default, an auto-incrementing primary key (id) is created
@@ -47,6 +50,7 @@ class UrlScraper:
                 "css_selector": self.css_selector,
                 "interval": self.interval,
                 "name": self.name,
+                "pause_time": self.pause_time,
                 "scroll_to_bottom": self.scroll_to_bottom,
                 "last_scrape": self._last_scrape,
                 "data": None,
@@ -60,6 +64,7 @@ class UrlScraper:
                 "css_selector": db.types.text,
                 "interval": db.types.integer,
                 "name": db.types.text,
+                "pause_time": db.types.integer,
                 "scroll_to_bottom": db.types.boolean,
                 "last_scrape": db.types.float,
                 "data": db.types.text,
@@ -117,16 +122,16 @@ class UrlScraper:
         """
         driver.get(scraper["url"])
         if scraper["scroll_to_bottom"]:
-            # TODO: Add a "max time" that dictates how long the scraper will spend scrolling. Perhaps also add an option for SCROLL_PAUSE_TIME then
             # https://stackoverflow.com/a/27760083/
-            SCROLL_PAUSE_TIME = 3
             last_height = driver.execute_script("return document.body.scrollHeight")
             while True:
                 # Scroll down to bottom
                 driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
 
                 # Wait to load page
-                time.sleep(SCROLL_PAUSE_TIME)
+                logger.debug(f"Waiting {scraper['pause_time']} seconds")
+                time.sleep(scraper["pause_time"])
+                logger.debug("Done waiting")
 
                 # Calculate new scroll height and compare with last scroll height
                 new_height = driver.execute_script("return document.body.scrollHeight")
@@ -144,6 +149,9 @@ class UrlScraper:
                     break
                 last_height = new_height
         else:
+            logger.debug(f"Waiting {scraper['pause_time']} seconds")
+            time.sleep(scraper["pause_time"])
+            logger.debug("Done waiting")
             try:
                 element = driver.find_element(
                     webdriver.common.by.By.CSS_SELECTOR, scraper["css_selector"]
