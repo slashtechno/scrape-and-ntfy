@@ -218,7 +218,9 @@ class UrlScraper:
                                 scraper, message, notification_event
                             )
                     else:
-                        message = f"Data unchanged for {scraper["name"]} with data \"{data}\""
+                        message = (
+                            f"Data unchanged for {scraper["name"]} with data \"{data}\""
+                        )
                         cls.send_to_all_notifiers(
                             scraper, message, Notifier.NotifyOn.NO_CHANGE
                         )

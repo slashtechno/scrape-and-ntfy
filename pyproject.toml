@@ -1,6 +1,6 @@
 [project]
 name = "scrape-and-ntfy"
-version = "0.1.1"
+version = "0.1.2"
 description = "An extremely customizable web scraper with a modular notification system and persistent storage via SQLite."
 authors = [
     {name = "slashtechno", email = "77907286+slashtechno@users.noreply.github.com"},
@@ -21,6 +21,7 @@ classifiers = [
 "License :: OSI Approved :: MIT License",
 "Programming Language :: Python",
 ]
+keywords = ["web", "scraper", "ntfy", "webhooks", "docker"]
 
 [build-system]
 requires = ["pdm-backend"]

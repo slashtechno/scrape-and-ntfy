@@ -11,8 +11,9 @@ An extremely customizable web scraper with a modular notification system and per
 ## Usage
 ### Prerequisites
 - A browser
-    - Preferably a Firefox-based browser or some chromium-based browsers  
+    - Most Chromium-based browsers and Firefox-based browsers should work
     - Edge is not recommended  
+    - Selenium should also be able to download and cache the appropriate browser if necessary  
 ### Basic Configuration  
 - Configuration for the web scraper is handled through a TOML file
     - To see an example configuration, see `config.example.toml`  
@@ -35,10 +36,22 @@ An extremely customizable web scraper with a modular notification system and per
 2. Change directory into the repository
     - `cd scrape-and-ntfy`
 3. Configure via `config.toml`  
-    - Optionally, you can configure some other options via environment variables or command-line arguments
+    - Optionally, you can configure some other options via environment variables or command-line arguments in the `docker-compose.yml` file  
 4. `docker compose up -d`
     - The `-d` flag runs the containers in the background
     - If you want, you can run [`sqlite-web`](https://github.com/coleifer/sqlite-web) by uncommenting the appropriate lines in `docker-compose.yml` to view the database in a browser on [localhost:5050](http://localhost:5050)  
+
+### `pip`  
+#### Specific perquisites  
+- Python (3.11+)
+#### Installation and usage  
+1. Install with `pip`  
+    - `pip install scrape-and-ntfy`  
+    - Depending on your system, you may need to use `pip3` instead of `pip` or `python3 -m pip`/`python -m pip`.  
+2. Configure  
+3. Run `scrape-and-ntfy`  
+    - This assumes `pip`-installed scripts are in your `PATH`  
+
 
 ### PDM  
 #### Specific perquisites
@@ -52,7 +65,6 @@ An extremely customizable web scraper with a modular notification system and per
 3. Run `pdm install`  
     - This will install the dependencies in a virtual environment  
     - You may need to specify an interpreter with `pdm use`  
-4. Configure via `config.toml`  
-    - Optionally, you can configure some other options via environment variables or command-line arguments
+4. Configure  
 5. `pdm run python -m scrape_and_ntfy`  
     - This will run the bot with the configuration in `config.toml`
