@@ -1,6 +1,8 @@
 # Scrape and Ntfy  
 An extremely customizable web scraper with a modular notification system and persistent storage via SQLite.  
 
+![Updates sent to a Slack channel](slack.png)
+
 ## Features  
 - Modular notification system  
     - Currently supports Webhooks (e.g. Discord, Slack, etc.) and [ntfy.sh](https://ntfy.sh)  
